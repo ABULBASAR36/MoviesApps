@@ -1,32 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 
-/// Base URL for image loading (replace this with your actual image base URL)
-const String kmoviedbImageurl = "https://image.tmdb.org/t/p/w500";
+import 'package:moviesapps/model/cast_model.dart';
 
-/// Model for Cast details
-class CastModel {
-  final String profilePath;
-  final String name;
-  final String knownForDepartment;
+import '../constants/constants.dart';
 
-  CastModel({
-    required this.profilePath,
-    required this.name,
-    required this.knownForDepartment,
-  });
-
-  /// Factory method to parse JSON into a CastModel
-  factory CastModel.fromJson(Map<String, dynamic> json) {
-    return CastModel(
-      profilePath: json['profile_path'] ?? '',
-      name: json['name'] ?? 'Unknown',
-      knownForDepartment: json['known_for_department'] ?? 'Unknown',
-    );
-  }
-}
-
-/// CastListItem widget for displaying individual cast member details
 class CastListItem extends StatelessWidget {
   final CastModel castModel;
 
@@ -35,83 +13,54 @@ class CastListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(8),
+      margin: EdgeInsets.all(5),
       width: 120,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // CachedNetworkImage for profile picture
           CachedNetworkImage(
-            imageUrl: "$kmoviedbImageurl${castModel.profilePath}",
+            imageUrl: kmoviedbImageURL + castModel.profilePath.toString(),
             imageBuilder: (context, imageProvider) => Container(
               height: 100,
               width: 100,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.all(Radius.circular(50)),
                 image: DecorationImage(
                   image: imageProvider,
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-            placeholder: (context, url) => const CircularProgressIndicator(),
-            errorWidget: (context, url, error) => const Icon(Icons.error),
+            placeholder: (context, url) =>
+                Center(child: CircularProgressIndicator()),
+            errorWidget: (context, url, error) => Container(
+              height: 100,
+              width: 100,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(50)),
+                  image: DecorationImage(
+                    image: AssetImage("assets/image/notfound.png"),
+                    fit: BoxFit.fill,
+                  )),
+            ),
           ),
-          const SizedBox(height: 5),
-          // Display cast name
+          SizedBox(
+            height: 5,
+          ),
           Text(
-            castModel.name,
+            castModel.name.toString(),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w300),
           ),
-          // Display cast department
           Text(
-            castModel.knownForDepartment,
+            castModel.knownForDepartment.toString(),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.grey),
           ),
         ],
       ),
     );
   }
-}
-
-/// Example usage within a Scaffold
-class CastPageExample extends StatelessWidget {
-  const CastPageExample({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // Example list of cast data
-    final List<CastModel> castList = [
-      CastModel(
-        profilePath: '/path_to_image.jpg',
-        name: 'Actor Name',
-        knownForDepartment: 'Acting',
-      ),
-      CastModel(
-        profilePath: '/path_to_image2.jpg',
-        name: 'Another Actor',
-        knownForDepartment: 'Directing',
-      ),
-    ];
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Cast List Example')),
-      body: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: castList.length,
-        itemBuilder: (context, index) {
-          return CastListItem(castModel: castList[index]);
-        },
-      ),
-    );
-  }
-}
-
-void main() {
-  runApp(const MaterialApp(
-    home: CastPageExample(),
-  ));
 }

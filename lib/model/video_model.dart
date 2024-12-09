@@ -40,17 +40,17 @@ class VideoModel {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['iso_639_1'] = this.iso6391;
-    data['iso_3166_1'] = this.iso31661;
-    data['name'] = this.name;
-    data['key'] = this.key;
-    data['site'] = this.site;
-    data['size'] = this.size;
-    data['type'] = this.type;
-    data['official'] = this.official;
-    data['published_at'] = this.publishedAt;
-    data['id'] = this.id;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['iso_639_1'] = iso6391;
+    data['iso_3166_1'] = iso31661;
+    data['name'] = name;
+    data['key'] = key;
+    data['site'] = site;
+    data['size'] = size;
+    data['type'] = type;
+    data['official'] = official;
+    data['published_at'] = publishedAt;
+    data['id'] = id;
     return data;
   }
 }

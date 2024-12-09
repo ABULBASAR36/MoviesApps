@@ -1,16 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:moviesapps/componants/cast_page.dart' as cast_page;
-import 'package:moviesapps/constants/constants.dart';
+
+import 'package:moviesapps/componants/cast_page.dart';
 import 'package:moviesapps/model/movie_model.dart';
 import 'package:moviesapps/model/video_model.dart';
-import 'package:moviesapps/service/api_service.dart' as api_service;
-import 'package:moviesapps/service/api_service.dart';
 import 'package:moviesapps/ui/movie/movie_category.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-enum ProgramType { movie, tv }
+import '../../constants/constants.dart';
+import '../../service/api_service.dart';
+
 
 class MovieDetails extends StatelessWidget {
   final MovieModel movieModel;
@@ -19,12 +19,12 @@ class MovieDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    api_service.ApiService apiService = api_service.ApiService();
+    ApiService apiService = ApiService();
 
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(movieModel.title ?? 'Unknown Movie'),
+        title: Text(movieModel.title.toString()),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -35,47 +35,34 @@ class MovieDetails extends StatelessWidget {
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: CachedNetworkImage(
-                      height: 240,
-                      width: double.infinity,
-                      fit: BoxFit.fill,
-                      placeholder: (context, url) => CircularProgressIndicator(),
-                      errorWidget: (context, url, error) => Icon(Icons.error),
-                      imageUrl: kmoviedbImageurl + movieModel.backdropPath.toString(),
-                    ),
+                  CachedNetworkImage(
+                    height: 240,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    imageUrl:
+                        kmoviedbImageURL + movieModel.backdropPath.toString(),
+                    placeholder: (context, url) =>
+                        Center(child: CircularProgressIndicator()),
+                    errorWidget: (context, url, error) => Icon(Icons.error),
                   ),
-                  // Fetch video data (YouTube trailer)
-                  FutureBuilder<List<VideoModel>>(
-                    future: apiService.getVideos(movieModel.id ?? 0, ProgramType.movie as api_service.ProgramType),
+                  FutureBuilder(
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator(); // Loading state
-                      }
-                      if (snapshot.hasError) {
-                        return Icon(Icons.error, color: Colors.red); // Error state
-                      }
                       if (snapshot.hasData) {
                         List<VideoModel> videos = snapshot.data ?? [];
-                        print("Fetched videos: ${videos.length}"); // Debug: Check the number of videos fetched
-
                         if (videos.isNotEmpty) {
-                          String videoKey = videos[0].key ?? '';
-                          print("Video Key: $videoKey"); // Debug: Check the video key
-                          
-                          // Show the play button if a valid video key is available
                           return CircleAvatar(
-                            backgroundColor: Colors.transparent,
-                            radius: 35,
+                            backgroundColor: Colors.white.withOpacity(0.5),
                             child: IconButton(
-                              icon: Icon(Icons.play_circle, color: Colors.white),
+                              icon: Icon(
+                                Icons.play_circle,
+                                color: Colors.redAccent,
+                              ),
                               onPressed: () async {
-                                if (videoKey.isNotEmpty) {
-                                  final videoUrl = 'https://www.youtube.com/watch?v=$videoKey'; // Correct URL format
-                                  // Launch the video URL
-                                  if (!await launchUrl(Uri.parse(videoUrl))) {
-                                    throw Exception("Could not launch video");
+                                if (videos.isNotEmpty) {
+                                  if (!await launchUrl(Uri.parse(
+                                      'https://www.youtube.com/embed/${videos[0].key}'))) {
+                                    throw Exception(
+                                        'Could not launch ${videos[0].key}');
                                   }
                                 }
                               },
@@ -83,61 +70,110 @@ class MovieDetails extends StatelessWidget {
                           );
                         }
                       }
-                      return SizedBox(); // If no videos, return an empty widget
+                      return Container();
                     },
-                  ),
+                    future: apiService.getVideo(
+                        movieModel.id ?? 0, ProgramType.movie),
+                  )
                 ],
               ),
-              SizedBox(height: 5),
+              SizedBox(
+                height: 8,
+              ),
               Text(
-                movieModel.title ?? 'Unknown Movie',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w300, fontSize: 20),
+                movieModel.title.toString(),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w300,
+                  fontSize: 24,
+                  background: Paint()
+                    ..shader = LinearGradient(
+                      colors: [Colors.red, Colors.purple, Colors.blue],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(Rect.fromLTWH(0, 0, 200, 50)),
+                ),
               ),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   RatingBarIndicator(
                     rating: movieModel.voteAverage ?? 0,
-                    itemBuilder: (context, index) {
-                      return Icon(Icons.star, color: Colors.amber);
-                    },
+                    itemBuilder: (context, index) => Icon(
+                      Icons.star,
+                      color: Colors.amber,
+                    ),
                     itemCount: 5,
-                    itemSize: 15,
+                    itemSize: 20.0,
                     direction: Axis.horizontal,
                   ),
-                  SizedBox(width: 5),
-                  Text(
-                    movieModel.voteAverage?.toStringAsFixed(1) ?? '0.0',
-                    style: TextStyle(color: Colors.white),
+                  SizedBox(
+                    width: 5,
                   ),
-                  Spacer(),
                   Text(
-                    "Released: ${movieModel.releaseDate ?? 'Unknown'}",
-                    style: TextStyle(color: Colors.white),
-                  ),
+                    movieModel.voteAverage == null
+                        ? ""
+                        : movieModel.voteAverage.toString(),
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  )
                 ],
               ),
-              const SizedBox(height: 5),
-              Text(
-                movieModel.overview ?? 'No overview available',
-                style: TextStyle(color: Colors.grey, fontSize: 20),
+              SizedBox(
+                height: 8,
               ),
-              SizedBox(height: 8),
+              Text(
+                "Released: ${movieModel.releaseDate}",
+                style: TextStyle(color: Colors.white, fontSize: 18,fontWeight: FontWeight.bold),
+              ),
+              SizedBox(
+                height: 8,
+              ),
+              Text(
+                movieModel.overview.toString(),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w300,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
               Text(
                 "Cast",
-                style: TextStyle(color: Colors.white, fontSize: 20),
+                style: TextStyle(color: Colors.white, fontSize: 20, background: Paint()
+                  ..shader = LinearGradient(
+                    colors: [Colors.green, Colors.blue, Colors.purple],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ).createShader(Rect.fromLTWH(0, 0, 200, 50)),
+                ),
               ),
-              cast_page.CastPage(id: movieModel.id ?? 0, type: cast_page.ProgramType.movie),
-              SizedBox(height: 8),
-              Text(
-                "Similar Movies",
-                style: TextStyle(color: Colors.white, fontSize: 20),
-              ),
-              SizedBox(height: 8),
               SizedBox(
                 height: 200,
-                child: MovieCategory(
+                child: CastPage(
+                  id: movieModel.id ?? 0,
+                  type: ProgramType.movie,
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Text(
+                "Similar Movie",
+                style: TextStyle(color: Colors.white, fontSize: 20, background: Paint()
+                  ..shader = LinearGradient(
+                    colors: [Colors.pink, Colors.purple, Colors.blue],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ).createShader(Rect.fromLTWH(0, 0, 200, 50)),
+                ),
+              ),
+              SizedBox(
+                height: 200,
+                child: MoviesCategory(
                   movieType: MovieType.similar,
-                  movieId: movieModel.id ?? 0,
+                  movieID: movieModel.id ?? 0,
                 ),
               ),
             ],
